@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Comic Book Page Editor</title>
+    <link rel="stylesheet" href="editor.css">
+</head>
+<body class="mode-split-v">
+    <header id="top-bar">
+        <span class="brand">Coral Reef Comic Book Page Editor</span>
+        <input type="text" id="proj-name" value="Project_Zog" title="Project Name">
+        <div class="divider"></div>
+        <label class="compact-label">Zoom <input type="range" id="zoom-slider" min="0.1" max="2.0" step="0.1" value="1.0"></label>
+        <button onclick="undo()" title="Undo">↶</button>
+        <button onclick="redo()" title="Redo">↷</button>
+        <div class="divider"></div>
+        <button onclick="downloadCSV()" class="success"> Save CSV💾</button>
+        <!-- Actual File Loaders -->
+        <button onclick="document.getElementById('csv-up').click()"> Load CSV📂</button>
+        <input type="file" id="csv-up" hidden accept=".csv" onchange="loadCSVFromFile(this)">
+        
+        <button onclick="exportPNG()" class="success">📸 PNG</button>
+        <button onclick="resetCanvas()" class="danger" style="margin-left:auto;"> Clear Workspace</button>
+    </header>
+
+    <div id="main-container">
+        <!-- SIDEBAR -->
+        <aside id="sidebar">
+            <div class="panel">
+                <div class="panel-title">1. Tool Picker</div>
+                <div class="radio-grid">
+                    <label><input type="radio" name="mode" value="edit-cell" checked> ⛶ Edit Cell</label>
+                    <label><input type="radio" name="mode" value="doodle-transform"> ✥ Doodle Tool</label>
+                    <label><input type="radio" name="mode" value="split-v"> ◫ Split V</label>
+                    <label><input type="radio" name="mode" value="split-h"> ⊟ Split H</label>
+                    <label><input type="radio" name="mode" value="delete"> 🗑 Delete Cell</label>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">2. Global Gutters</div>
+                <div class="input-row">
+                    <label>Gap <input type="number" id="gutter-size" value="4" oninput="applyGutter()"></label>
+                    <label>Ang <input type="number" id="gutter-angle" value="135" oninput="applyGutter()"></label>
+                </div>
+                <div class="input-row">
+                    <label>Col A <input type="color" id="gutter-c1" value="#1e293b" oninput="applyGutter()"></label>
+                    <label>Col B <input type="color" id="gutter-c2" value="#0f172a" oninput="applyGutter()"></label>
+                </div>
+            </div>
+
+            <!-- CELL PROPERTIES -->
+            <div id="cell-panel" class="panel active-prop">
+                <div class="panel-title">Active Cell Properties</div>
+                <div class="input-row">
+                    <label>Pad <input type="number" id="cell-pad" value="0" oninput="applyCellStyle()"></label>
+                    <label>Ang <input type="number" id="cell-angle" value="135" oninput="applyCellStyle()"></label>
+                </div>
+                <div class="input-row">
+                    <label>Col A <input type="color" id="cell-c1" value="#ffffff" oninput="applyCellStyle()"></label>
+                    <label>Col B <input type="color" id="cell-c2" value="#e2e8f0" oninput="applyCellStyle()"></label>
+                </div>
+                <hr class="mini-hr">
+                <div class="input-row">
+                    <button onclick="document.getElementById('bg-up').click()">🖼 Set BG Image</button>
+                    <button onclick="clearCellBG()" class="danger" style="width: 30px;" title="Clear Image">X</button>
+                    <input type="file" id="bg-up" hidden accept="image/*" onchange="uploadCellBG(this)">
+                </div>
+                <div class="input-row">
+                    <label>Rep: 
+                        <select id="cell-repeat" onchange="applyCellStyle()" style="width: 60px;">
+                            <option value="no-repeat">None</option>
+                            <option value="repeat">Both</option>
+                            <option value="repeat-x">X</option>
+                            <option value="repeat-y">Y</option>
+                        </select>
+                    </label>
+                    <label title="Values: cover, contain, 100% 100%, 50px 50px">Size: 
+                        <input type="text" id="cell-bg-size" value="cover" oninput="applyCellStyle()">
+                    </label> 
+                </div>
+                <div class="input-row">
+                    <label>Off X % <input type="number" id="cell-bg-x" value="50" oninput="applyCellStyle()"></label>
+                    <label>Off Y % <input type="number" id="cell-bg-y" value="50" oninput="applyCellStyle()"></label>
+                </div>
+                <hr class="mini-hr">
+                <div class="radio-grid">
+                    <button onclick="addDoodle('text')">+ Text</button>
+                    <!-- Actual file loader for Doodle Image -->
+                    <button onclick="document.getElementById('doodle-img-up').click()">+ Image</button>
+                    <input type="file" id="doodle-img-up" hidden accept="image/*" onchange="addDoodleImgFromFile(this)">
+                    
+                    <button onclick="addDoodle('bubble')" style="grid-column: span 2;">+ SVG Shape Obj</button>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top:auto;">
+                <div class="panel-title">Canvas Setup</div>
+                <div class="input-row">
+                    <label>W <input type="number" id="canv-w" value="1200" oninput="resizeCanvas()"></label>
+                    <label>H <input type="number" id="canv-h" value="800" oninput="resizeCanvas()"></label>
+                </div>
+            </div>
+        </aside>
+
+        <main id="workspace">
+            <div id="canvas-scale-container">
+                <div id="main-canvas" style="width:1200px; height:800px;">
+                    <div class="cell" id="root" style="flex: 1 1 100%;">
+                        <div class="cell-padder" data-c1="#ffffff" data-c2="#e2e8f0" data-ang="135" style="background-image: linear-gradient(135deg, rgb(255, 255, 255), rgb(226, 232, 240)); background-position: 50% 50%;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer id="console-area">
+        <textarea id="csv-preview" readonly placeholder="DATA STREAM..."></textarea>
+    </footer>
+
+    <!-- DIVISION OVERLAY -->
+    <div id="division-overlay" class="floating-overlay">
+        <div class="overlay-header">
+            <span id="overlay-title">EDIT DIV</span>
+            <span class="close-btn" onclick="document.getElementById('division-overlay').style.display='none'">X</span>
+        </div>
+        <div class="input-row" style="margin-top: 5px;">
+            <label>Ratio: <input type="number" id="overlay-ratio" step="0.1" value="1" style="width: 60px;"></label>
+            <button onclick="applyOverlayRatio()" class="success">Set</button>
+        </div>
+        <div class="hint-text">Drag bar for fine pixels.</div>
+    </div>
+
+    <!-- DOODLE OVERLAY -->
+    <div id="doodle-overlay" class="floating-overlay" style="width: 220px;">
+        <div class="overlay-header">
+            <span>EDIT DOODLE</span>
+            <span class="close-btn" onclick="document.getElementById('doodle-overlay').style.display='none'">X</span>
+        </div>
+        <textarea id="doodle-text-input" oninput="syncDoodleText()" placeholder="Type text here..."></textarea>
+        
+        <div class="tool-row">
+            <button onclick="styleDoodleText('fontWeight', 'bold')"><b>B</b></button>
+            <button onclick="styleDoodleText('fontStyle', 'italic')"><i>I</i></button>
+            <label>Pt: <input type="number" id="doodle-fs" value="14" oninput="styleDoodleText('fontSize', this.value + 'px')" style="width:40px;"></label>
+        </div>
+        <div class="tool-row">
+            <button onclick="styleDoodleText('textAlign', 'left')">⫷</button>
+            <button onclick="styleDoodleText('textAlign', 'center')">≣</button>
+            <button onclick="styleDoodleText('textAlign', 'right')">⫸</button>
+            <button onclick="styleDoodleText('textAlign', 'justify')">▤</button>
+        </div>
+        <hr class="mini-hr">
+        <div class="input-row">
+            <label>W: <input type="number" id="doodle-w" oninput="applyDoodleDims()" style="width:45px;"></label>
+            <label>H: <input type="number" id="doodle-h" oninput="applyDoodleDims()" style="width:45px;"></label>
+            <label>Z: <input type="number" id="doodle-z" value="10" oninput="applyDoodleProps()" style="width:35px;"></label>
+        </div>
+        <div class="input-row" style="margin-top:5px;">
+            <label>Opac: <input type="range" id="doodle-op" min="0" max="1" step="0.1" value="1" oninput="applyDoodleProps()"></label>
+        </div>
+        <div class="input-row" style="margin-top:5px;" id="shape-selector-container">
+            <label>Shape: 
+                <select id="doodle-shape" onchange="changeDoodleShape()" style="width:100px; background:#020617; color:#fff; border:1px solid #475569;">
+                    <option value="ellipse">Ellipse</option>
+                    <option value="cloud">Cloud</option>
+                    <option value="spiky">Spiky (Yell)</option>
+                    <option value="box">Box</option>
+                </select>
+            </label>
+        </div>
+        <div class="input-row" id="doodle-bg-pos-row" style="margin-top:5px; display:none;">
+            <label>Img X% <input type="number" id="doodle-bg-x" value="50" oninput="applyDoodleBGPos()"></label>
+            <label>Img Y% <input type="number" id="doodle-bg-y" value="50" oninput="applyDoodleBGPos()"></label>
+        </div>
+        <button onclick="deleteActiveDoodle()" class="danger" style="margin-top:5px; width:100%;">Delete Doodle</button>
+    </div>
+
+    <script src="editor.js"></script>
+</body>
+</html>

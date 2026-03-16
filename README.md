@@ -15,3 +15,6 @@ A basic comic book editor in html/java/css/csv
 - **Save CSV:** Downloads a manifest of your current project.
 - **Load CSV:** Select a saved project file from your computer to resume work.
 - **PNG Export:** Generates a high-resolution snapshot of your layout including margins.
+
+## Known bug:
+- **Load CSV doodle refresh:** When loading csv file, the doodles might be inactive, so add a new doodle, delete the new doodle, and it should reset the rest of the doodles.
